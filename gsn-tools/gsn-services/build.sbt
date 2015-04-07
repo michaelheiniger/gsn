@@ -17,6 +17,11 @@ crossPaths := false
 
 scriptClasspath := Seq("*")
 
+val buildSettings = Defaults.defaultSettings ++ Seq(
+   javaOptions += "-Xmx128m",
+   javaOptions += "-Xms64m"
+)
+
 libraryDependencies ++= Seq(
   jdbc,
   ws,
@@ -24,6 +29,7 @@ libraryDependencies ++= Seq(
   "org.apache.jena" % "apache-jena-libs" % "2.13.0" exclude("log4j","log4j") exclude("org.slf4j","slf4j-log4j12"),
   "com.h2database" % "h2" % "1.4.181",
   "mysql" % "mysql-connector-java" % "5.1.6",
+  "org.reactivemongo" %% "play2-reactivemongo" % "0.10.5.0.akka23",
   "org.scalatestplus" %% "play" % "1.1.0" % "test"
   )
 

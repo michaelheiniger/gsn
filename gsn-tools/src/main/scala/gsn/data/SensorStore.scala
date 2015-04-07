@@ -7,6 +7,16 @@ import gsn.security.SecurityData
 import javax.sql.DataSource
 import concurrent.duration._
 import akka.event.Logging
+import reactivemongo.api.MongoDriver
+import reactivemongo.bson.BSONDocument
+import scala.util.{Failure=>ScalaFailure}
+import scala.util.Success
+import reactivemongo.bson.BSON
+
+object dsReg{
+  val dsss=new collection.mutable.HashMap[String,StorageConf]
+  
+}
 
 import gsn.data.discovery.PropertiesManager
 
@@ -14,6 +24,9 @@ class SensorStore(ds:DataStore) extends Actor{
   val log = Logging(context.system, this)
   private val sec=new SecurityData(ds)
   val confWatch=context.actorOf(Props[ConfWatcher])
+    
+  val driver = new MongoDriver(context.system)
+  val connection = driver.connection(List("localhost"))
   
   val propertiesEndpoint = GsnConf.defaultFuseki.getString("propertiesEndpoint")
   val mappingsEndpoint = GsnConf.defaultFuseki.getString("mappingsEndpoint")
@@ -23,58 +36,64 @@ class SensorStore(ds:DataStore) extends Actor{
       mappingsEndpoint,virtualSensorsEndpoint, baseRdfUri)
   
   val sensors=new collection.mutable.HashMap[String,Sensor]
-  val vsDatasources=new collection.mutable.HashMap[String,DataSource]
+  val vsDatasources=new collection.mutable.HashMap[String,String]
   val sensorStats=new collection.mutable.HashMap[String,SensorStats]
   implicit val exe=context.dispatcher
-  val refresh = context.system.scheduler.schedule(0 millis, 1 minutes, self, RefreshStats)
+  val refresh = context.system.scheduler.schedule(0 millis, 10 minutes, self, RefreshStats)
   object RefreshStats
-
+ dsReg.dsss .put("gsn",ds.gsn.storageConf )
   import SensorDatabase._
-  override def preStart()={  
+  override def preStart()={
   }    
   
   override def postStop()={
     refresh cancel
   }    
   
+  
   def receive ={    
     //vs config messages
     case ModifiedVsConf(vs)=>
+      val vsname=vs.name.toLowerCase
       if (vs.storage.isDefined) {
+        dsReg.dsss.put(vsname, vs.storage.get)
         val d=ds.datasource(vs.storage.get.url, vs.storage.get)
-        vsDatasources.put(vs.name, d)        
+        vsDatasources.put(vsname, d.getDataSourceName)        
       }
       
       val hasAc=sec.hasAccessControl(vs.name)
-      implicit val source=vsDatasources.get(vs.name)   
+      implicit val source=vsDatasources.get(vsname)   
       
-      val mappings = propertiesManager.getMappingsForSensor(vs.name.toLowerCase());
+      val mappings = propertiesManager.getMappingsForSensor(vsname);
 
       val s=Sensor.fromConf(vs,hasAc,None,Option(mappings))
 
       val sStats= stats(s)
-      
-      sensorStats put(vs.name,sStats)
-      sensors.put(vs.name,s)
+      //storeMongo(s)
+      sensorStats put(vsname,sStats)
+      sensors put(vsname,s)
       
     case DeletedVsConf(vs)=>
-      if (sensors.contains(vs.name)){
-        sensors remove vs.name
-        vsDatasources remove vs.name
-        sensorStats remove vs.name
+      val vsname=vs.name.toLowerCase
+      if (sensors.contains(vsname)){
+        sensors remove vsname
+        vsDatasources remove vsname
+        sensorStats remove vsname
       }
   
     //sensor request messages
     case GetAllSensorsInfo =>
-      sender ! AllSensorInfo(sensors.values.map{
-        s=>SensorInfo(s,vsDatasources.get(s.name ),sensorStats.get(s.name))
+      sender ! AllSensorInfo(sensors.values.map{s=>
+        val vsname=s.name.toLowerCase
+        SensorInfo(s,vsDatasources.get(vsname),sensorStats.get(vsname))
       }.toSeq)
     case GetSensorInfo(sensorid) =>
-      if (!sensors.contains(sensorid ))
+      val vsname=sensorid.toLowerCase
+      if (!sensors.contains(vsname ))
         sender ! Failure(new IllegalArgumentException(s"Sensor id $sensorid is not valid."))
       else 
-        sender ! SensorInfo(sensors(sensorid),
-            vsDatasources.get(sensorid),sensorStats.get(sensorid))
+        sender ! SensorInfo(sensors(vsname),
+            vsDatasources.get(vsname),sensorStats.get(vsname))
      
     //stats
     case RefreshStats=>
@@ -86,23 +105,31 @@ class SensorStore(ds:DataStore) extends Actor{
         sensorStats put(sensorid,stats(s))
       }
   }
-  
-  /*
-  private def computeStats(sensor:Sensor)={
-    //val sensor=sensors(sensorid)
-    stats(sensor)(vsDatasources.get(sensor.name ))
-    //sensorStats.put(sensorid, statistics)
-  }*/
-}
 
+  def storeMongo(s:Sensor)={
+    val db = connection.db("gsn-metadata")
+    val collection = db.collection("sensors")
+    
+    import gsn.data.bson.BsonConverter._
+    val doco=BSON.write(s)
+    
+    val future = collection.insert(doco)
+
+    future.onComplete {
+      case ScalaFailure(e) => throw e
+      case Success(lastError) => {
+      //println("successfully inserted document with lastError = " + lastError)
+      }
+    }
+  }
+}
 
 case class GetSensorInfo(sensorid:String)
 case class GetAllSensorsInfo()
-case class SensorInfo(sensor:Sensor,ds:Option[DataSource]=None,stats:Option[SensorStats]=None)			
+case class SensorInfo(sensor:Sensor,ds:Option[String]=None,stats:Option[SensorStats]=None)			
 case class AllSensorInfo(sensors:Seq[SensorInfo])
 
 case class GetAllSensors(latestValues:Boolean=false,timeFormat:Option[String]=None)
 case class GetSensor(sensorid:String,latestValues:Boolean=false,timeFormat:Option[String]=None)
 case class GetSensorData(sensorid:String,fields:Seq[String],
 			conditions:Seq[String], size:Option[Int],timeFormat:Option[String])
-//case class GetSensorStats(sensorid:String)			
