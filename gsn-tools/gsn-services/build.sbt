@@ -21,6 +21,7 @@ libraryDependencies ++= Seq(
   jdbc,
   ws,
   cache,
+  "org.apache.jena" % "apache-jena-libs" % "2.13.0" exclude("log4j","log4j") exclude("org.slf4j","slf4j-log4j12"),
   "com.h2database" % "h2" % "1.4.181",
   "mysql" % "mysql-connector-java" % "5.1.6",
   "org.scalatestplus" %% "play" % "1.1.0" % "test"

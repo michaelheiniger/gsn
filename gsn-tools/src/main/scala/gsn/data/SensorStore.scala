@@ -8,10 +8,19 @@ import javax.sql.DataSource
 import concurrent.duration._
 import akka.event.Logging
 
+import gsn.data.discovery.PropertiesManager
+
 class SensorStore(ds:DataStore) extends Actor{
   val log = Logging(context.system, this)
   private val sec=new SecurityData(ds)
   val confWatch=context.actorOf(Props[ConfWatcher])
+  
+  val propertiesEndpoint = GsnConf.defaultFuseki.getString("propertiesEndpoint")
+  val mappingsEndpoint = GsnConf.defaultFuseki.getString("mappingsEndpoint")
+  val virtualSensorsEndpoint = GsnConf.defaultFuseki.getString("virtualSensorsEndpoint")
+  val baseRdfUri = GsnConf.defaultFuseki.getString("baseRdfUri")
+  val propertiesManager:PropertiesManager = new PropertiesManager(propertiesEndpoint,
+      mappingsEndpoint,virtualSensorsEndpoint, baseRdfUri)
   
   val sensors=new collection.mutable.HashMap[String,Sensor]
   val vsDatasources=new collection.mutable.HashMap[String,DataSource]
@@ -35,9 +44,14 @@ class SensorStore(ds:DataStore) extends Actor{
         val d=ds.datasource(vs.storage.get.url, vs.storage.get)
         vsDatasources.put(vs.name, d)        
       }
+      
       val hasAc=sec.hasAccessControl(vs.name)
-      implicit val source=vsDatasources.get(vs.name)          
-      val s=Sensor.fromConf(vs,hasAc,None)
+      implicit val source=vsDatasources.get(vs.name)   
+      
+      val mappings = propertiesManager.getMappingsForSensor(vs.name.toLowerCase());
+
+      val s=Sensor.fromConf(vs,hasAc,None,Option(mappings))
+
       val sStats= stats(s)
       
       sensorStats put(vs.name,sStats)
@@ -72,6 +86,7 @@ class SensorStore(ds:DataStore) extends Actor{
         sensorStats put(sensorid,stats(s))
       }
   }
+  
   /*
   private def computeStats(sensor:Sensor)={
     //val sensor=sensors(sensorid)

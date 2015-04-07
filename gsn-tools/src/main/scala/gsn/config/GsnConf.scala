@@ -51,4 +51,3 @@ object StorageConf extends Conf{
     xml \@ "password",
     xml.attribute("identifier").map(_.toString))  
 }
-

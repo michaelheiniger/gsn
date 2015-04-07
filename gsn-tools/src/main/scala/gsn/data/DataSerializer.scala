@@ -7,6 +7,9 @@ import scala.collection.mutable.ArrayBuffer
 import gsn.data.netcdf.NetCdf
 import java.nio.charset.Charset
 import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
 
 trait DataSerializer{
   def ser(s:Sensor,props:Seq[String]):Object=
@@ -37,7 +40,12 @@ object JsonSerializer extends DataSerializer{
     //val fields=sensor.fields.filter(f=>valueNames.isEmpty || valueNames.contains(f.fieldName ))
     val values=ts.map(_.series)
     val fields=ts.map(_.output).map{f=>
-      Json.obj("name"->f.fieldName,"type"->f.dataType.name,"unit"->f.unit.code)
+      val mappings:Seq[(String,JsString)] = f.mapping match {
+        case Some(x) => for ((k,v) <- x) yield (k,JsString(v)) 
+        case None => Seq.empty[(String,JsString)]
+      }
+      val seq = Seq("name"->JsString(f.fieldName),"type"->JsString(f.dataType.name),"unit"->JsString(f.unit.code))
+      JsObject(seq++mappings)
     }
     
     val jsValues= if (values.isEmpty) Seq()

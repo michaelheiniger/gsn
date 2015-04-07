@@ -8,16 +8,18 @@ scalaVersion := "2.11.2"
 
 crossPaths := false
 
+lazy val gsnsensordatadiscovery = (project in file("gsn-sensor-data-discovery"))
+
 lazy val gsnweb = (project in file("gsn-services")).enablePlugins(PlayScala).dependsOn(tools)
 
-lazy val tools = (project in file("."))
+lazy val tools = (project in file(".")).dependsOn(gsnsensordatadiscovery)
 
 lazy val root = project.
   aggregate(tools,gsnweb).
   settings(
     aggregate in update := false
   )
-
+  
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.2",
   "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.2",  

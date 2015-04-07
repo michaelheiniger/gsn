@@ -32,4 +32,8 @@ trait Conf{
       defaults.getString("description"),defaults.getString("email"),
       defaults.getInt("port"),defaults.getString("timeFormat"),
       defaultZmq,defaultAc,defaultStorage,None)
+      
+  lazy val defaultFuseki=defaults.getConfig("fuseki")
+//  lazy val defaultFuseki=FusekiConf(fuseki.getString("propertiesEndpoint"),
+//      fuseki.getString("mappingsEndpoint"),fuseki.getString("virtualSensorsEndpoint"))
 }
