@@ -90,7 +90,7 @@ class PropertiesManager(sparqlServiceProperties:String,
     val details = scala.collection.mutable.ListBuffer[(String,String)]()
     
     var property:String = ""
-    val queryProperty = prefixSsx + "SELECT ?property \n WHERE { \n <" + outputUri + "> ssx:dbField  ?property \n}"
+    val queryProperty = prefixSsx + "SELECT ?property \n WHERE { \n <" + outputUri + "> ssx:dbField ?property \n}"
     val queryExecProperty = QueryExecutionFactory.sparqlService(sparqlServiceMapping + "/query", queryProperty)
     val resultsProperty = queryExecProperty.execSelect();
     // Takes the first result if any
@@ -116,7 +116,6 @@ class PropertiesManager(sparqlServiceProperties:String,
   
   def getMappingsForSensor(sensorName:String):Map[String,List[(String,String)]] = {
      val query = "SELECT ?output\n WHERE {\n <" + baseUri + sensorName + "> " + ssnHasOutput + " ?output \n}"
-       
      val mappings = scala.collection.mutable.Map[String, List[(String,String)]]()
      val queryExec = QueryExecutionFactory.sparqlService(sparqlServiceSensors + "/query", query)
      val results =  queryExec.execSelect()

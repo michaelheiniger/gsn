@@ -181,12 +181,16 @@
                         to_return+='<option value="All" >' + all + '</option>';
                     }
 
-
+                    var selectedVs = getURLParam("vsName");
                     var sk = getSortedKeys(items);
                     var l = sk.length;
                     for (var i = 0 ; i < l ; i++) {
                         if ("time" == sk[i]) continue;
-                        to_return+='<option value="' + sk[i]+'" >'+sk[i]+'</option>';
+                        if (selectedVs == sk[i].toLowerCase() && id == "vss_0") {
+                        	to_return+='<option selected value="' + sk[i]+'" >'+sk[i]+'</option>';
+                        } else {
+                       		to_return+='<option value="' + sk[i]+'" >'+sk[i]+'</option>';
+                    	}
                     }
                     to_return+='</select>'
                     return to_return;
@@ -204,7 +208,7 @@
                         if (units[items[sv[i]]]==null || units[items[sv[i]]]=="")
                             to_return+='<option value="' + items[sv[i]]+'" >'+items[sv[i]]+'</option>';
                         else
-                            to_return+='<option value="' + items[sv[i]]+'" >'+items[sv[i]] + " [" + units[items[sv[i]]] + "]" +'</option>';
+                            to_return+='<option value="' + items[sv[i]]+'" >' + items[sv[i]] + " [" + units[items[sv[i]]] + "]" +'</option>';
                     }
                     to_return+='</select>'
                     return to_return;
@@ -229,6 +233,7 @@
                         search_contains: true,
                         width: "200px"
                     });
+                    
                     $('#'+vss_id).on('change', function(evt, params){
                         var vs = $(this).val();
                         if (vs != 'All') {
@@ -240,7 +245,7 @@
                             $('#'+fields_id).on('change', function(evt, params){
                                 if ($(this).val() != 'All' && $('#'+vss_id).val() != 'All') {
                                     $(this).parent().parent().children('.condition-slider').show();
-                                    var conditions_content = '&nbsp<input type="text" class="min" style="font-weight:bold; width:30px; display: inline-block;"/>';
+                                  	  var conditions_content = '&nbsp<input type="text" class="min" style="font-weight:bold; width:30px; display: inline-block;"/>';
                                     conditions_content += '&nbsp &nbsp';
                                     conditions_content += '<div class="slider-range" style="width: 200px; display: inline-block"></div>';
                                     conditions_content += '&nbsp &nbsp';
@@ -273,6 +278,11 @@
                             $(this).parent().remove();
                         }
                     });
+                 
+                    var vsSelect = document.getElementById(vss_id);
+                    if (vsSelect != 0) {
+                    	$('#'+vss_id).trigger( "change" );
+                    }
                 }
 
                 function prepare_form_for_submission(tag){
@@ -331,7 +341,8 @@
                 }
 
                 /** Load the REQUEST_LIST_OF_VIRTUAL_SENSORS xml and create the mapping */
-                $.get("gsn?REQUEST=0&omit_latest_values=true", function(xml){
+//                $.get("gsn?REQUEST=0&omit_latest_values=true", function(xml){
+				$.get("ext/ws/api/sensors?format=xml&latestValues=false", function(xml){
                     lovs = xml
                     virtual_sensors.push("All");
 
@@ -341,9 +352,15 @@
                         virtual_sensor_to_fields[vsname] = virtual_sensor_to_fields[vsname] || []
                         $(this).find('field').each(function(){
                             if ($(this).attr('category') != 'predicate') {
+                            	var obsProperty = $(this).attr('obsProperty')
                                 var field_name = $(this).attr('name');
                                 var field_unit = $(this).attr('unit');
-                                virtual_sensor_to_fields[vsname].push(field_name);
+                                if (obsProperty != null) {
+                                	virtual_sensor_to_fields[vsname].push(field_name + " (" + obsProperty + ")");
+                                } else {
+                                	virtual_sensor_to_fields[vsname].push(field_name);
+                                }
+                                
                                 field_to_virtual_sensor[field_name] = field_to_virtual_sensor[field_name] || []
                                 field_to_virtual_sensor[field_name].push(vsname)
 
@@ -493,6 +510,25 @@ csv_to_json($(this), drawGrid, 'iso');
 });
 
             });
+                
+function getURLParam(strParamName){
+    var strReturn = "";
+    var strHref = window.location.href;
+    if ( strHref.indexOf("?") > -1 ){
+        var strQueryString = strHref.substr(strHref.indexOf("?")).toLowerCase();
+        var aQueryString = strQueryString.split("&");
+        for ( var iParam = 0; iParam < aQueryString.length; iParam++ ){
+            if (
+                aQueryString[iParam].indexOf(strParamName.toLowerCase() + "=") > -1 ){
+                var aParam = aQueryString[iParam].split("=");
+                strReturn = aParam[1];
+                break;
+            }
+        }
+    }
+    return unescape(strReturn);
+}
+                
         </script>
     </head>
     <body>

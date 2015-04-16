@@ -21,7 +21,7 @@ object Sensor{
           case Some(m) => {
             vsConf.processing.output map{out=>
                Sensing(out.name,Output(out.name.toLowerCase,vsConf.name,
-              DataUnit(out.unit.getOrElse(null)),DataType(out.dataType), m.get(out.name)))}
+              DataUnit(out.unit.getOrElse(null)),DataType(out.dataType), m.get(out.name.toLowerCase())))}
           }
           case None => {
             vsConf.processing.output map{out=>

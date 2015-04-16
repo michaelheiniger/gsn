@@ -64,7 +64,7 @@ class SensorStore(ds:DataStore) extends Actor{
       val hasAc=sec.hasAccessControl(vs.name)
       implicit val source=vsDatasources.get(vsname)   
       
-      val mappings = propertiesManager.getMappingsForSensor(vsname);
+      val mappings = propertiesManager.getMappingsForSensor(vsname)
 
       val s=Sensor.fromConf(vs,hasAc,None,Option(mappings))
 

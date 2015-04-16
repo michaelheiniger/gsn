@@ -23,6 +23,12 @@
 		<display-name>Play Servlet</display-name>
 		<servlet-class>play.core.server.servlet25.Play2Servlet</servlet-class>
 	</servlet> --> 
+	
+	<servlet>
+		<servlet-name>GsnProxyServlet</servlet-name>
+		<display-name>GSN Proxy Servlet</display-name>
+		<servlet-class>gsn.http.restapi.GsnProxy</servlet-class>
+	</servlet> 
 	<!-- ******************************************************************************* 
 		GSN's Main Servlets, Must be enabled for any kind of HTTP based access ******************************************************************************* -->
 
@@ -468,13 +474,16 @@
 		<url-pattern>/gsn/MyAccessRightsManagementServlet</url-pattern>
 	</servlet-mapping>
 
-
-<!-- 
-	<servlet-mapping>
+	<!-- <servlet-mapping>
 		<servlet-name>PlayServlet</servlet-name>
 		<url-pattern>/ws/*</url-pattern>
+	</servlet-mapping> -->
+	
+	<servlet-mapping>
+		<servlet-name>GsnProxyServlet</servlet-name>
+		<url-pattern>/ext/*</url-pattern>
 	</servlet-mapping>
--->
+
 	<!-- GSN END -->
 
 	<!-- ******************************************************************************* 

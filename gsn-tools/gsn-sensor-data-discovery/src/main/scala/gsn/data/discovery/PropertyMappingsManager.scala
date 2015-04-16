@@ -31,13 +31,13 @@ class PropertyMappingsManager(propertiesManager:PropertiesManager, baseUri:Strin
     val mappings = Source.fromFile(file).getLines().map { line => line.split(",") }.filter { a => a.length >= 2 }
     
     mappings.foreach { m => 
-      val propertyToMap:String = m(0);
+      val propertyToMap:String = m(0).toLowerCase();
       val obsPropertyURI:String = m(1);
       
       if (propertiesManager.observedPropertyExists(obsPropertyURI)) {
         propertiesManager.addNewMapping(propertyToMap, obsPropertyURI)
       } else {
-        System.out.println("WARNING:(mapping) Property: " + obsPropertyURI + " doesn't exist in the model.");
+        println("WARNING:(mapping) Property: " + obsPropertyURI + " doesn't exist in the model.");
       }
     }
   }
@@ -70,7 +70,7 @@ class PropertyMappingsManager(propertiesManager:PropertiesManager, baseUri:Strin
           newSensor.addProperty(ssnHasOutput, vsModel.createResource(obsPropertyUri))
         } else {
           val log = "WARNING: There is no mapping for property " + value.as[String]
-          System.out.println(log)
+          println(log)
         }
       }
     // Write new statements to database...

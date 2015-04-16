@@ -116,7 +116,7 @@ object CsvSerializer extends DataSerializer{
     s"${s.sensor.name},$prop"+
     ",\""+output.map(f=>f.fieldName).mkString("|")+"\""+
     ",\""+output.map(f=>f.unit.code).mkString("|")+"\""+
-    ",\""+output.map(f=>f.dataType.name).mkString("|")+"\""    
+    ",\""+output.map(f=>f.dataType.name).mkString("|")+"\""  
   }
   
   def sensorDataToCsv(data:SensorData,props:Seq[String],withLatest:Boolean=false)={
