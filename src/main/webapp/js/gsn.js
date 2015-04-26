@@ -2241,4 +2241,4 @@ function vsFieldsToString(vs){
 		result += $(this).attr("name") + ((obsProperty!=null)?' ('+obsProperty + ')':'') + '\n';
 	});
 	return result;
-}
+}   

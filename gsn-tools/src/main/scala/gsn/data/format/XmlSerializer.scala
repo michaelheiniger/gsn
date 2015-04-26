@@ -28,17 +28,22 @@ object XmlSerializer extends DataSerializer{
     val desc=s.properties.getOrElse("description","")
     val acces=s.properties.getOrElse("accessProtected","false").toBoolean
     val protect=if (acces) "(protected)" else "" 
-    var i = 1  
+    var i = 0
     val vs= 
       <virtual-sensor name={s.name} 
         protected={protect} 
         description={desc}>
         {
+          var time:Elem = null
           val output = s.fields.map{f=> 
             var value = ""
             if (values.size >= i+1) {
               if (values(i).size >=1) {
-                value = values(i)(0).toString()
+                if (i == 0) {
+                  time = <field name="time" type="string" description="The timestamp associated with the stream element" unit="">{values(i)(0).toString()}</field>
+                } else {
+                  value = values(i)(0).toString()
+                }
               }
             }
             i+=1
@@ -49,7 +54,7 @@ object XmlSerializer extends DataSerializer{
           val predicates=s.properties.map{case (k,v)=>
             <field name={k} catergory="predicate" >{v}</field>
           }
-          output++predicates
+          if (time != null) time++output++predicates else output++predicates
         }
       </virtual-sensor>;
     vs
